@@ -57,7 +57,7 @@ def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=Non
             info = info + "Model: {}".format([EN.vocab.itos[x] for x in sentence])
             logger.log(info) if logger is not None else print(info)
 
-def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN
+def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
                 max_norm=1.0, num_epochs=10, logger=None):  
     encoder.train()
     decoder.train()
