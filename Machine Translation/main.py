@@ -61,11 +61,11 @@ dropout = 0.2
 encoder = LSTM_Encoder(DE.vocab.vectors, hidden_size, num_layers, dropout).cuda()
 decoder = LSTM_Decoder(EN.vocab.vectors, hidden_size, num_layers, dropout).cuda()
 criterion = nn.NLLLoss()
-optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=0.0001)
+optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=0.001)
 
 ## Train Model -------------------------------------------------------------------------------------------------
 
 logger = Logger()
 
-train_model(train_iter, val_iter, encoder, decoder, optimizer, criterion, DE, EN,
-            max_norm=1.0, num_epochs=10, logger=logger)
+train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
+            max_norm=1.0, num_epochs=50, logger=logger)

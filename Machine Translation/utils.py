@@ -19,3 +19,4 @@ class Logger():
       print(info, file=f)
     if stdout:
       print(info)
+
