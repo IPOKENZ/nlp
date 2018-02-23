@@ -15,8 +15,8 @@ from torchtext import datasets
 use_gpu = torch.cuda.is_available()
 
 import spacy
-spacy_de = spacy.load('de_core_news_sm')
-spacy_en = spacy.load('en_core_web_sm') #might have to change these, depending on what you named your packages
+spacy_de = spacy.load('de')
+spacy_en = spacy.load('en') #might have to change these, depending on what you named your packages
 
 def tokenize_de(text):
     return [tok.text for tok in spacy_de.tokenizer(text)]
