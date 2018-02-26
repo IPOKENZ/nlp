@@ -56,7 +56,7 @@ EN.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url))
 
 ## Build Parameters --------------------------------------------------------------------------------------------
 
-hidden_size = 1000
+hidden_size = 300
 num_layers = 4
 dropout = 0.2
 encoder = LSTM_Encoder(DE.vocab.vectors, hidden_size, num_layers, dropout).cuda()
