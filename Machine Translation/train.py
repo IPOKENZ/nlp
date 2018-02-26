@@ -10,10 +10,11 @@ def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=Non
     ## Assumes that val_iter_bs1 has batch_size=1
     encoder.eval()
     decoder.eval()
+
+    target_sentences = []
+    output_sentences = []
+
     for i, batch in enumerate(val_iter_bs1): 
-        
-        target_sentences = []
-        output_sentences = []
         
         source = batch.src.cuda() if use_gpu else batch.src
         target = batch.trg.cuda() if use_gpu else batch.trg
