@@ -69,7 +69,7 @@ optimizer = optim.Adam(list(filter(lambda x: x.requires_grad, encoder.parameters
 ## Train Model -------------------------------------------------------------------------------------------------
 
 parser = argparse.ArgumentParser(description='Language Model')
-parser.add_argument('--pretrain', default=True, type=bool)
+parser.add_argument('--pretrain', default=1, type=int)
 args = parser.parse_args()
 
 if args.pretrain:
