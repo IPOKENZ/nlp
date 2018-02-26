@@ -6,10 +6,49 @@ from utils import moses_multi_bleu
 
 use_gpu = torch.cuda.is_available()
 
-def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True):
+def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True):
     ## Assumes that val_iter_bs1 has batch_size=1
     encoder.eval()
     decoder.eval()
+
+    ## Do fake validation to compute perplexity (same thing as train basically)
+
+    losses = 0
+    for i, batch in enumerate(val_iter): 
+        source = batch.src.cuda() if use_gpu else batch.src
+        target = batch.trg.cuda() if use_gpu else batch.trg
+        
+        # Initialize LSTM states
+        batch_size = source.size(1)
+        num_layers, hidden_size = encoder.num_layers, encoder.hidden_size
+        init = Variable(torch.zeros(num_layers, batch_size, hidden_size))
+        init = init.cuda() if use_gpu else init
+        states = (init, init.clone())
+
+        # Forward, backprop, optimizer
+        optimizer.zero_grad()
+        
+        outputs, states = encoder(source, states)
+        translated, states = decoder(target, states, outputs)
+        
+        vocab_size = translated.size(2)
+        start_tokens = Variable(torch.zeros(batch_size, vocab_size))
+        start_tokens = start_tokens.scatter_(1, torch.ones(batch_size).unsqueeze(1).long() * EN.vocab.stoi["<s>"], 1)
+        start_tokens = start_tokens.unsqueeze(0).cuda()
+        translated = torch.cat((start_tokens, translated[:-1]), 0)
+        
+        loss = criterion(translated.view(-1, vocab_size), target.view(-1))
+
+        # Log information
+        losses += loss.data[0]
+        log_freq = 1000
+        if i % log_freq == 10:
+            losses_for_log = losses / (i)
+            info = 'Epoch [{epochs}/{num_epochs}], Batch [{batch}/{num_batches}], Validation Loss: {loss:.3f}, Validation Perplexity: {perplexity:.3f}'.format(
+                epochs=epoch+1, num_epochs=num_epochs, batch=i, num_batches=len(val_iter), loss=losses_for_log, perplexity=torch.exp(torch.FloatTensor([losses_for_log]))[0])
+            logger.log(info) if logger is not None else print(info)
+
+    ## Do real validation with beam search
 
     target_sentences = []
     output_sentences = []
@@ -80,7 +119,7 @@ def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=Non
     # Predict the BLEU score
     print("BLEU Score: ", moses_multi_bleu(output_sentences, target_sentences))
 
-def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
+def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
                 max_norm=1.0, num_epochs=10, logger=None):  
     encoder.train()
     decoder.train()
@@ -89,7 +128,7 @@ def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion
 
         # Validate model
         if epoch % 4 == 0:
-            validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True)
+            validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True)
 
         # Train model
         losses = 0
