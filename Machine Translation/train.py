@@ -24,9 +24,6 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
         init = Variable(torch.zeros(num_layers, batch_size, hidden_size))
         init = init.cuda() if use_gpu else init
         states = (init, init.clone())
-
-        # Forward, backprop, optimizer
-        optimizer.zero_grad()
         
         outputs, states = encoder(source, states)
         translated, states = decoder(target, states, outputs)
