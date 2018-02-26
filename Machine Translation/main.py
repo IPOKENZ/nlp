@@ -1,6 +1,7 @@
 from train import train_model, validate_model
 from models.lstm import LSTM_Encoder, LSTM_Decoder, LSTM_Attention_Decoder
 from utils import Logger
+import argparse
 
 import torch
 import torch.nn as nn
@@ -67,10 +68,20 @@ optimizer = optim.Adam(list(filter(lambda x: x.requires_grad, encoder.parameters
 
 ## Train Model -------------------------------------------------------------------------------------------------
 
-logger = Logger()
+parser = argparse.ArgumentParser(description='Language Model')
+parser.add_argument('--pretrain', default=True, type=bool)
+args = parser.parse_args()
 
+if args.pretrain:
+	decoder.load_state_dict(torch.load('saves/decoder.pkl'))
+	encoder.load_state_dict(torch.load('saves/encoder.pkl'))
+	print('Loaded pretrained model.')
+
+logger = Logger()
+ 
 if use_gpu: 
 	print("CUDA is available, hooray!")
 
 train_model(train_iter, val_iter_bs1, encoder, attn_decoder, optimizer, criterion, DE, EN,
             max_norm=1.0, num_epochs=20, logger=logger)	
+
