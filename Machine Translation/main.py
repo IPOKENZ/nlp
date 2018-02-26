@@ -1,5 +1,5 @@
 from train import train_model, validate_model
-from models.lstm import LSTM_Encoder, LSTM_Decoder
+from models.lstm import LSTM_Encoder, LSTM_Decoder, LSTM_Attention_Decoder
 from utils import Logger
 
 import torch
@@ -59,13 +59,18 @@ hidden_size = 1000
 num_layers = 4
 dropout = 0.2
 encoder = LSTM_Encoder(DE.vocab.vectors, hidden_size, num_layers, dropout).cuda()
-decoder = LSTM_Decoder(EN.vocab.vectors, hidden_size, num_layers, dropout).cuda()
+# decoder = LSTM_Decoder(EN.vocab.vectors, hidden_size, num_layers, dropout).cuda()
+attn_decoder = LSTM_Attention_Decoder(EN.vocab.vectors, hidden_size, num_layers, dropout).cuda()
 criterion = nn.NLLLoss()
-optimizer = optim.Adam(list(encoder.parameters()) + list(decoder.parameters()), lr=0.001)
+optimizer = optim.Adam(list(filter(lambda x: x.requires_grad, encoder.parameters())) + 
+                       list(filter(lambda x: x.requires_grad, attn_decoder.parameters())), lr=0.001)
 
 ## Train Model -------------------------------------------------------------------------------------------------
 
 logger = Logger()
 
+if use_gpu: 
+	print("CUDA is available, hooray!")
+
 train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
-            max_norm=1.0, num_epochs=50, logger=logger)
+            max_norm=1.0, num_epochs=20, logger=logger)	

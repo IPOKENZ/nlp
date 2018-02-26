@@ -5,7 +5,7 @@ from torch.autograd import Variable
 
 use_gpu = torch.cuda.is_available()
 
-def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=False):
+def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True):
     ## Assumes that val_iter has batch_size=1
     encoder.eval()
     decoder.eval()
@@ -19,34 +19,47 @@ def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=Non
         init = Variable(torch.zeros(num_layers, batch_size, hidden_size))
         init = init.cuda() if use_gpu else init
         states = (init, init.clone())
-
         outputs, states = encoder(source, states) #these have a batch_size=1 problem which is kind of annoying.
-        sentence = [] #begin with a start token.
-        vocab_size = len(EN.vocab)
-        word = Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda() #begin with a start token.
         
         max_trg_len = batch.trg.size(0) #cap it to compute perplexity, will be uncapped at test time 
-        probs = [] #store all our probabilities to compute perplexity
-        losses = 0
-
-        while word.data[0] != EN.vocab.stoi["</s>"] and len(sentence) < max_trg_len: ### TO FIX: YOU DONT WANT A CAP HERE
-            sentence.append(word.data[0])
-            translated, states = decoder(word.unsqueeze(1), states)
-            probs.append(translated)
+        if beam_search: #beam search
+            k = 10 #store best k options
+            ## CONVERT BEST_OPTIONS WITH USE_GPU = TRUE OR FALSE.
+            best_options = [(Variable(torch.zeros(1)).cuda(), Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda(), states)] 
+            length = 0
+            while length < max_trg_len:
+                options = [] #same format as best_options
+                for lprob, sentence, current_state in best_options:
+                    last_word = sentence[-1]
+                    if last_word.data[0] != EN.vocab.stoi["</s>"]:
+                        probs, new_state = decoder(last_word.unsqueeze(1), current_state, outputs)
+                        probs = probs.squeeze()
+                        for index in torch.topk(probs, k)[1]: #only care about top k options in probs for next word.
+                            options.append((torch.add(probs[index], lprob), torch.cat([sentence, index]), new_state))
+                    else:
+                        options.append((lprob, sentence, current_state))
+                options.sort(key = lambda x: x[0].data[0], reverse=True)
+                best_options = options[:k] #sorts by first element, which is lprob.
+                length = length + 1
+            best_options.sort(key = lambda x: x[0].data[0], reverse=True)
+            best_choice = best_options[0] #best overall
+            sentence = best_choice[1].data
             
-            # figure out what the next word should be -- either argmax or beam-search
-            if beam_search:
-                pass
-            else:
+        else: #regular argmax search (aka beam search with k=1)
+            sentence = [] #begin with a start token.
+            vocab_size = len(EN.vocab)
+            word = Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda() #begin with a start token.
+
+            probs = [] #store all our probabilities to compute perplexity
+            losses = 0
+
+            while word.data[0] != EN.vocab.stoi["</s>"] and len(sentence) < max_trg_len: ### TO FIX: YOU DONT WANT A CAP HERE
+                sentence.append(word.data[0])
+                translated, states = decoder(word.unsqueeze(1), states, outputs)
+                probs.append(translated)
                 word = torch.max(translated, 2)[1][0]
-                
-        sentence.append(EN.vocab.stoi["</s>"])
-        probs = torch.stack(probs)
-        
-        # Log information -- Doesn't work at the moment
-#         print(probs.view(-1, vocab_size), target.view(-1))
-#         loss = criterion(probs.view(-1, vocab_size), target.view(-1)) 
-#         losses += loss.data[0]
+
+            sentence.append(EN.vocab.stoi["</s>"])
         
         # Every now and then, output a sentence and its translation
         log_freq = 100
@@ -65,7 +78,7 @@ def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion
     for epoch in range(num_epochs):
 
         # Validate model
-        validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=False)
+        validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True)
 
         # Train model
         losses = 0
