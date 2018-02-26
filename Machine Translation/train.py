@@ -112,18 +112,17 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
             print("Model: {}\n".format([EN.vocab.itos[x] for x in sentence]))
 
     # Predict the BLEU score
-    print("BLEU Score: ", moses_multi_bleu(output_sentences, target_sentences))
+    info = "BLEU Score: {}".format(moses_multi_bleu(output_sentences, target_sentences))
+    logger.log(info) if logger is not None else print(info)
 
 def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
                 max_norm=1.0, num_epochs=10, logger=None):  
     encoder.train()
     decoder.train()
-    best_ppl = 1000
     for epoch in range(num_epochs):
 
         # Validate model
-        if epoch % 4 == 0:
-            validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True)
+        validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=logger, beam_search=True)
 
         # Train model
         losses = 0
@@ -168,5 +167,5 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
                 info = 'Epoch [{epochs}/{num_epochs}], Batch [{batch}/{num_batches}], Loss: {loss:.3f}, Sorta-Perplexity: {perplexity:.3f}'.format(
                     epochs=epoch+1, num_epochs=num_epochs, batch=i, num_batches=len(train_iter), loss=losses_for_log, perplexity=torch.exp(torch.FloatTensor([losses_for_log]))[0])
                 logger.log(info) if logger is not None else print(info)
-                torch.save(encoder.state_dict(), 'saves/encoder.pkl')
-                torch.save(decoder.state_dict(), 'saves/decoder.pkl')
+                torch.save(encoder.state_dict(), 'saves/encoder{}.pkl'.format(epoch))
+                torch.save(decoder.state_dict(), 'saves/decoder{}.pkl'.format(epoch))
