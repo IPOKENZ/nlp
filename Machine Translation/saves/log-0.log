@@ -1,0 +1,5 @@
+Epoch [1/20], Batch [10/3722], Loss: 7.199, Sorta-Perplexity: 1338.355
+Epoch [1/20], Batch [1010/3722], Loss: 3.993, Sorta-Perplexity: 54.236
+Epoch [1/20], Batch [2010/3722], Loss: 3.938, Sorta-Perplexity: 51.302
+Epoch [1/20], Batch [3010/3722], Loss: 3.909, Sorta-Perplexity: 49.826
+Epoch [2/20], Batch [10/3722], Loss: 4.159, Sorta-Perplexity: 63.979

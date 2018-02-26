@@ -1,0 +1,12 @@
+Epoch [1/20], Batch [10/3722], Loss: 8.033, Sorta-Perplexity: 3082.231
+Epoch [1/20], Batch [1010/3722], Loss: 4.012, Sorta-Perplexity: 55.258
+Epoch [1/20], Batch [2010/3722], Loss: 3.820, Sorta-Perplexity: 45.605
+Epoch [1/20], Batch [3010/3722], Loss: 3.612, Sorta-Perplexity: 37.058
+Epoch [2/20], Batch [10/3722], Loss: 2.898, Sorta-Perplexity: 18.134
+Epoch [2/20], Batch [1010/3722], Loss: 2.923, Sorta-Perplexity: 18.600
+Epoch [2/20], Batch [2010/3722], Loss: 2.887, Sorta-Perplexity: 17.943
+Epoch [2/20], Batch [3010/3722], Loss: 2.858, Sorta-Perplexity: 17.429
+Epoch [3/20], Batch [10/3722], Loss: 2.910, Sorta-Perplexity: 18.363
+Epoch [3/20], Batch [1010/3722], Loss: 2.669, Sorta-Perplexity: 14.426
+Epoch [3/20], Batch [2010/3722], Loss: 2.657, Sorta-Perplexity: 14.250
+Epoch [3/20], Batch [3010/3722], Loss: 2.644, Sorta-Perplexity: 14.074
