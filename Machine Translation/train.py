@@ -38,12 +38,10 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
 
         # Log information
         losses += loss.data[0]
-        log_freq = 1000
-        if i % log_freq == 10:
-            losses_for_log = losses / (i)
-            info = 'Epoch [{epochs}/{num_epochs}], Batch [{batch}/{num_batches}], Validation Loss: {loss:.3f}, Validation Perplexity: {perplexity:.3f}'.format(
-                epochs=epoch+1, num_epochs=num_epochs, batch=i, num_batches=len(val_iter), loss=losses_for_log, perplexity=torch.exp(torch.FloatTensor([losses_for_log]))[0])
-            logger.log(info) if logger is not None else print(info)
+    losses_for_log = losses / len(val_iter)
+    info = 'Validation Loss: {loss:.3f}, Validation Perplexity: {perplexity:.3f}'.format(
+        loss=losses_for_log, perplexity=torch.exp(torch.FloatTensor([losses_for_log]))[0])
+    logger.log(info) if logger is not None else print(info)
 
     ## Do real validation with beam search
 
