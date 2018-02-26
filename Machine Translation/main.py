@@ -72,5 +72,5 @@ logger = Logger()
 if use_gpu: 
 	print("CUDA is available, hooray!")
 
-train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
+train_model(train_iter, val_iter_bs1, encoder, attn_decoder, optimizer, criterion, DE, EN,
             max_norm=1.0, num_epochs=20, logger=logger)	

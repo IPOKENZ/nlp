@@ -2,14 +2,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
+from utils import moses_multi_bleu
 
 use_gpu = torch.cuda.is_available()
 
 def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True):
-    ## Assumes that val_iter has batch_size=1
+    ## Assumes that val_iter_bs1 has batch_size=1
     encoder.eval()
     decoder.eval()
     for i, batch in enumerate(val_iter_bs1): 
+        
+        target_sentences = []
+        output_sentences = []
+        
         source = batch.src.cuda() if use_gpu else batch.src
         target = batch.trg.cuda() if use_gpu else batch.trg
 
@@ -61,14 +66,18 @@ def validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=Non
 
             sentence.append(EN.vocab.stoi["</s>"])
         
+        target_sentences.append(" ".join([EN.vocab.itos[x[0]] for x in target.data.cpu().numpy()[1:-1]]))
+        output_sentences.append(" ".join([EN.vocab.itos[x] for x in sentence][1:-1]))
+        
         # Every now and then, output a sentence and its translation
         log_freq = 100
         if i % log_freq == 10:
-            info = ''
-            info = info + "Source: {}".format([DE.vocab.itos[x[0]] for x in source.data.cpu().numpy()])
-            info = info + "Target: {}".format([EN.vocab.itos[x[0]] for x in target.data.cpu().numpy()])
-            info = info + "Model: {}".format([EN.vocab.itos[x] for x in sentence])
-            logger.log(info) if logger is not None else print(info)
+            print("Source: {}\n".format([DE.vocab.itos[x[0]] for x in source.data.cpu().numpy()]))
+            print("Target: {}\n".format([EN.vocab.itos[x[0]] for x in target.data.cpu().numpy()]))
+            print("Model: {}\n".format([EN.vocab.itos[x] for x in sentence]))
+
+    # Predict the BLEU score
+    print("BLEU Score: ", moses_multi_bleu(output_sentences, target_sentences))
 
 def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
                 max_norm=1.0, num_epochs=10, logger=None):  
@@ -97,7 +106,7 @@ def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion
             optimizer.zero_grad()
             
             outputs, states = encoder(source, states)
-            translated, states = decoder(target, states)
+            translated, states = decoder(target, states, outputs)
             
             vocab_size = translated.size(2)
             start_tokens = Variable(torch.zeros(batch_size, vocab_size))

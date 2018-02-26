@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
+import torch.nn.functional as F
 
 class LSTM_Encoder(nn.Module):
     def __init__(self, embedding, hidden_size, num_layers, dropout):
