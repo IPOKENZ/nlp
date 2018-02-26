@@ -87,7 +87,7 @@ def train_model(train_iter, val_iter_bs1, encoder, decoder, optimizer, criterion
     for epoch in range(num_epochs):
 
         # Validate model
-        if epoch % 4 == 3:
+        if epoch % 4 == 0:
             validate_model(val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True)
 
         # Train model

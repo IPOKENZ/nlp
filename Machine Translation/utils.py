@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torchtext
 from torchtext.vocab import Vectors, GloVe
-import itertools, os 
+import itertools, os, re 
 import tempfile, subprocess
 
 use_gpu = torch.cuda.is_available()
