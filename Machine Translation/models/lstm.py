@@ -13,8 +13,6 @@ class LSTM_Encoder(nn.Module):
         # Create word embedding
         vocab_size, embedding_size = embedding.size()
         self.embedding = nn.Embedding(vocab_size, embedding_size)
-        self.embedding.weight.data.copy_(embedding)
-        self.embedding.weight.requires_grad=False
 
         # Create LSTM and linear layers 
         self.lstm = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=dropout)

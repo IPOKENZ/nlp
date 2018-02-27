@@ -51,7 +51,6 @@ val_iter_bs1 = data.BucketIterator(val, batch_size=1, device=-1,
 from torchtext.vocab import Vectors
 
 url = 'https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.simple.vec'
-DE.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url))
 EN.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url))
 
 ## Build Parameters --------------------------------------------------------------------------------------------
@@ -68,9 +67,9 @@ args = parser.parse_args()
 hidden_size = 300
 num_layers = 4
 dropout = args.dropout
-encoder = LSTM_Encoder(DE.vocab.vectors, hidden_size, num_layers, dropout).cuda()
+encoder = LSTM_Encoder(DE.vocab.vectors, hidden_size, num_layers, args.dropout).cuda()
 # decoder = LSTM_Decoder(EN.vocab.vectors, hidden_size, num_layers, dropout).cuda()
-attn_decoder = LSTM_Attention_Decoder(EN.vocab.vectors, hidden_size, num_layers, dropout).cuda()
+attn_decoder = LSTM_Attention_Decoder(EN.vocab.vectors, hidden_size, num_layers, args.dropout).cuda()
 criterion = nn.NLLLoss()
 optimizer = optim.Adam(list(filter(lambda x: x.requires_grad, encoder.parameters())) + 
                        list(filter(lambda x: x.requires_grad, attn_decoder.parameters())), lr=args.lr)
