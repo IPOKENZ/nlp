@@ -51,6 +51,7 @@ val_iter_bs1 = data.BucketIterator(val, batch_size=1, device=-1,
 from torchtext.vocab import Vectors
 
 url = 'https://s3-us-west-1.amazonaws.com/fasttext-vectors/wiki.simple.vec'
+DE.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url)) #Not the right embedding but gives us the right sizes (FIX LATER)
 EN.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url))
 
 ## Build Parameters --------------------------------------------------------------------------------------------

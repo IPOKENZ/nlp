@@ -139,7 +139,7 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
     for epoch in range(num_epochs):
 
         # Validate model
-        validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=logger, beam_width=beam_width)
+        validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=logger, beam_width=beam_width    )
 
         # Train model
         losses = 0
