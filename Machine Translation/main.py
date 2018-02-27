@@ -30,7 +30,7 @@ EOS_WORD = '</s>'
 DE = data.Field(tokenize=tokenize_de)
 EN = data.Field(tokenize=tokenize_en, init_token = BOS_WORD, eos_token = EOS_WORD) # only target needs BOS/EOS
 
-MAX_LEN = 10
+MAX_LEN = 20
 train, val, test = datasets.IWSLT.splits(exts=('.de', '.en'), fields=(DE, EN), 
                                          filter_pred=lambda x: len(vars(x)['src']) <= MAX_LEN and 
                                          len(vars(x)['trg']) <= MAX_LEN)
@@ -60,6 +60,7 @@ random.seed(8888)
 
 parser = argparse.ArgumentParser(description='Language Model')
 parser.add_argument('--pretrain', default=1, type=int)
+parser.add_argument('--model_no', default=5, type=int)
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--dropout', default=0.2, type=float)
 parser.add_argument('--num_epochs', default=5, type=int)
@@ -80,8 +81,8 @@ optimizer = optim.Adam(list(filter(lambda x: x.requires_grad, encoder.parameters
 ## Train Model -------------------------------------------------------------------------------------------------
 
 if args.pretrain:
-	attn_decoder.load_state_dict(torch.load('saves/decoder.pkl'))
-	encoder.load_state_dict(torch.load('saves/encoder.pkl'))
+	attn_decoder.load_state_dict(torch.load('saves/decoder{}.pkl'.format(args.model_no)))
+	encoder.load_state_dict(torch.load('saves/encoder{}.pkl'.format(args.model_no)))
 	print('Loaded pretrained model.')
 
 logger = Logger()
