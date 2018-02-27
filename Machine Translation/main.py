@@ -1,7 +1,7 @@
 from train import train_model, validate_model
 from models.lstm import LSTM_Encoder, LSTM_Decoder, LSTM_Attention_Decoder
 from utils import Logger
-import argparse
+import argparse, random
 
 import torch
 import torch.nn as nn
@@ -30,7 +30,7 @@ EOS_WORD = '</s>'
 DE = data.Field(tokenize=tokenize_de)
 EN = data.Field(tokenize=tokenize_en, init_token = BOS_WORD, eos_token = EOS_WORD) # only target needs BOS/EOS
 
-MAX_LEN = 20
+MAX_LEN = 10
 train, val, test = datasets.IWSLT.splits(exts=('.de', '.en'), fields=(DE, EN), 
                                          filter_pred=lambda x: len(vars(x)['src']) <= MAX_LEN and 
                                          len(vars(x)['trg']) <= MAX_LEN)
@@ -39,7 +39,7 @@ MIN_FREQ = 5
 DE.build_vocab(train.src, min_freq=MIN_FREQ)
 EN.build_vocab(train.trg, min_freq=MIN_FREQ)
 
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 train_iter, val_iter = data.BucketIterator.splits((train, val), batch_size=BATCH_SIZE, device=-1,
                                                   repeat=False, sort_key=lambda x: len(x.src))
 
@@ -55,6 +55,8 @@ DE.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url)) #Not the righ
 EN.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url))
 
 ## Build Parameters --------------------------------------------------------------------------------------------
+
+random.seed(8888)
 
 parser = argparse.ArgumentParser(description='Language Model')
 parser.add_argument('--pretrain', default=1, type=int)
