@@ -17,17 +17,11 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
     for i, batch in enumerate(val_iter): 
         source = batch.src.cuda() if use_gpu else batch.src
         target = batch.trg.cuda() if use_gpu else batch.trg
-        
-        # Initialize LSTM states
-        batch_size = source.size(1)
-        num_layers, hidden_size = encoder.num_layers, encoder.hidden_size
-        init = Variable(torch.zeros(num_layers, batch_size, hidden_size))
-        init = init.cuda() if use_gpu else init
-        states = (init, init.clone())
-        
-        outputs, states = encoder(source, states)
+                
+        outputs, states = encoder(source)
         translated, states = decoder(target, states, outputs)
         
+        batch_size = source.size(1)
         vocab_size = translated.size(2)
         start_tokens = Variable(torch.zeros(batch_size, vocab_size))
         start_tokens = start_tokens.scatter_(1, torch.ones(batch_size).unsqueeze(1).long() * EN.vocab.stoi["<s>"], 1)
@@ -38,6 +32,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
 
         # Log information
         losses += loss.data[0]
+        
     losses_for_log = losses / len(val_iter)
     info = 'Validation Loss: {loss:.3f}, Validation Perplexity: {perplexity:.3f}'.format(
         loss=losses_for_log, perplexity=torch.exp(torch.FloatTensor([losses_for_log]))[0])
@@ -53,13 +48,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
         source = batch.src.cuda() if use_gpu else batch.src
         target = batch.trg.cuda() if use_gpu else batch.trg
 
-        # Initialize LSTM states
-        batch_size = source.size(1)
-        num_layers, hidden_size = encoder.num_layers, encoder.hidden_size
-        init = Variable(torch.zeros(num_layers, batch_size, hidden_size))
-        init = init.cuda() if use_gpu else init
-        states = (init, init.clone())
-        outputs, states = encoder(source, states) #these have a batch_size=1 problem which is kind of annoying.
+        outputs, states = encoder(source) #these have a batch_size=1 problem which is kind of annoying.
         
         max_trg_len = batch.trg.size(0) #cap it to compute perplexity, will be uncapped at test time 
         if beam_width: #beam search
@@ -133,13 +122,13 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
     logger.log(info) if logger is not None else print(info)
 
 def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
-                max_norm=1.0, num_epochs=10, logger=None, beam_width=None):  
+                max_norm=1.0, num_epochs=10, logger=None, beam_width=None, bidirectional=True):  
     encoder.train()
     decoder.train()
     for epoch in range(num_epochs):
 
         # Validate model
-        validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=logger, beam_width=beam_width    )
+        validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=logger, beam_width=beam_width)
 
         # Train model
         losses = 0
@@ -147,19 +136,13 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
             source = batch.src.cuda() if use_gpu else batch.src
             target = batch.trg.cuda() if use_gpu else batch.trg
             
-            # Initialize LSTM states
-            batch_size = source.size(1)
-            num_layers, hidden_size = encoder.num_layers, encoder.hidden_size
-            init = Variable(torch.zeros(num_layers, batch_size, hidden_size))
-            init = init.cuda() if use_gpu else init
-            states = (init, init.clone())
-
             # Forward, backprop, optimizer
             optimizer.zero_grad()
             
-            outputs, states = encoder(source, states)
+            outputs, states = encoder(source)
             translated, states = decoder(target, states, outputs)
             
+            batch_size = source.size(1)
             vocab_size = translated.size(2)
             start_tokens = Variable(torch.zeros(batch_size, vocab_size))
             start_tokens = start_tokens.scatter_(1, torch.ones(batch_size).unsqueeze(1).long() * EN.vocab.stoi["<s>"], 1)
@@ -171,10 +154,6 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
             torch.nn.utils.clip_grad_norm(encoder.parameters(), max_norm)
             torch.nn.utils.clip_grad_norm(decoder.parameters(), max_norm)
             optimizer.step()
-
-#             # Zero hidden state with certain probability
-#             if (torch.rand(1)[0] < 0.95):
-#                 states = (init.clone(), init.clone())
 
             # Log information
             losses += loss.data[0]

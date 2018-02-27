@@ -70,8 +70,7 @@ args = parser.parse_args()
 
 hidden_size = 300
 num_layers = 4
-dropout = args.dropout
-encoder = LSTM_Encoder(DE.vocab.vectors, hidden_size, num_layers, args.dropout).cuda()
+encoder = LSTM_Encoder(DE.vocab.vectors, hidden_size, int(num_layers/2), args.dropout, bidirectional=True).cuda()
 # decoder = LSTM_Decoder(EN.vocab.vectors, hidden_size, num_layers, dropout).cuda()
 attn_decoder = LSTM_Attention_Decoder(EN.vocab.vectors, hidden_size, num_layers, args.dropout).cuda()
 criterion = nn.NLLLoss()
