@@ -6,7 +6,7 @@ from utils import moses_multi_bleu
 
 use_gpu = torch.cuda.is_available()
 
-def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_search=True):
+def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=None, beam_width=None):
     ## Assumes that val_iter_bs1 has batch_size=1
     encoder.eval()
     decoder.eval()
@@ -62,8 +62,8 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
         outputs, states = encoder(source, states) #these have a batch_size=1 problem which is kind of annoying.
         
         max_trg_len = batch.trg.size(0) #cap it to compute perplexity, will be uncapped at test time 
-        if beam_search: #beam search
-            k = 10 #store best k options
+        if beam_width: #beam search
+            k = beam_width #store best k options
             ## CONVERT BEST_OPTIONS WITH USE_GPU = TRUE OR FALSE.
             best_options = [(Variable(torch.zeros(1)).cuda(), Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda(), states)] 
             length = 0
@@ -109,20 +109,37 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
         if i % log_freq == 10:
             print("Source: {}\n".format([DE.vocab.itos[x[0]] for x in source.data.cpu().numpy()]))
             print("Target: {}\n".format([EN.vocab.itos[x[0]] for x in target.data.cpu().numpy()]))
-            print("Model: {}\n".format([EN.vocab.itos[x] for x in sentence]))
+            print("Model (Beam): {}\n".format([EN.vocab.itos[x] for x in sentence]))
+
+            sentence = [] #begin with a start token.
+            vocab_size = len(EN.vocab)
+            word = Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda() #begin with a start token.
+
+            probs = [] #store all our probabilities to compute perplexity
+            losses = 0
+
+            while word.data[0] != EN.vocab.stoi["</s>"] and len(sentence) < max_trg_len: ### TO FIX: YOU DONT WANT A CAP HERE
+                sentence.append(word.data[0])
+                translated, states = decoder(word.unsqueeze(1), states, outputs)
+                probs.append(translated)
+                word = torch.max(translated, 2)[1][0]
+
+            sentence.append(EN.vocab.stoi["</s>"])
+
+            print("Model (Regular): {}\n".format([EN.vocab.itos[x] for x in sentence]))
 
     # Predict the BLEU score
     info = "BLEU Score: {}".format(moses_multi_bleu(output_sentences, target_sentences))
     logger.log(info) if logger is not None else print(info)
 
 def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
-                max_norm=1.0, num_epochs=10, logger=None):  
+                max_norm=1.0, num_epochs=10, logger=None, beam_width=None):  
     encoder.train()
     decoder.train()
     for epoch in range(num_epochs):
 
         # Validate model
-        validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=logger, beam_search=True)
+        validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, logger=logger, beam_width=beam_width)
 
         # Train model
         losses = 0
