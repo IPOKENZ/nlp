@@ -4,6 +4,8 @@ import torch.optim as optim
 from torch.autograd import Variable
 import torch.nn.functional as F
 
+use_gpu = torch.cuda.is_available()
+
 class LSTM_Encoder(nn.Module):
     def __init__(self, embedding, hidden_size, num_layers, dropout, bidirectional=True):
         super(LSTM_Encoder, self).__init__()
