@@ -76,7 +76,6 @@ class LSTM_Attention_Decoder(nn.Module):
         vocab_size, embedding_size = embedding.size()
         self.embedding = nn.Embedding(vocab_size, embedding_size)
         self.embedding.weight.data.copy_(embedding)
-        self.embedding.weight.requires_grad=False
         
         # Create Attention Layers
         # self.attn = nn.Bilinear(self.hidden_size, self.hidden_size, self.max_length)
@@ -85,14 +84,14 @@ class LSTM_Attention_Decoder(nn.Module):
         # Create LSTM and linear layers 
         self.lstm = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=dropout)
         self.linear1 = nn.Linear(hidden_size * 2, hidden_size)
-        self.tanh = nn.Tanh()
+        self.tanh = nn.ReLU()
         self.linear2 = nn.Linear(hidden_size, vocab_size)
         self.softmax = nn.LogSoftmax()
         self.dropout = nn.Dropout(dropout)
-        
-        # Weight-tie the FC layer to our embeddings
-        # self.linear.params = self.embedding.weight
 
+        # Weight-Tying
+        self.linear2.weight = self.embedding.weight
+        
     def forward(self, x, h, encoder_outputs):
         # Embed text and pass through LSTM
         x = self.embedding(x)
