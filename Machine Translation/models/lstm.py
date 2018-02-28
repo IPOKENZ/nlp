@@ -106,7 +106,7 @@ class LSTM_Attention_Decoder(nn.Module):
         
         # out = torch.cat((out, attn_applied.permute(1,0,2)), 2) <--- Need to double FC layer for this one  
         # out = torch.add(out, attn_applied.permute(1,0,2))
-        out = torch.cat((out, attn_applied), dim=2) 
+        out = torch.cat((out, attn_applied.permute(1,0,2)), dim=2) 
         out = self.linear1(out)
         out = self.tanh(out)
         out = self.linear2(out)
