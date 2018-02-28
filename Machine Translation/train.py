@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from utils import moses_multi_bleu
+import torchtext
 
 use_gpu = torch.cuda.is_available()
 
@@ -32,7 +33,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
 
         # Log information
         losses += loss.data[0]
-        
+
     losses_for_log = losses / len(val_iter)
     info = 'Validation Loss: {loss:.3f}, Validation Perplexity: {perplexity:.3f}'.format(
         loss=losses_for_log, perplexity=torch.exp(torch.FloatTensor([losses_for_log]))[0])
@@ -122,7 +123,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
     logger.log(info) if logger is not None else print(info)
 
 def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
-                max_norm=1.0, num_epochs=10, logger=None, beam_width=None, bidirectional=True):  
+                max_norm=5.0, num_epochs=10, logger=None, beam_width=None, bidirectional=True):  
     encoder.train()
     decoder.train()
     for epoch in range(num_epochs):
@@ -165,3 +166,44 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
                 logger.log(info) if logger is not None else print(info)
                 torch.save(encoder.state_dict(), 'saves/encoder{}.pkl'.format(epoch))
                 torch.save(decoder.state_dict(), 'saves/decoder{}.pkl'.format(epoch))
+
+def predict(in_file, out_file, encoder, decoder, criterion, DE, EN):
+    encoder.eval()
+    decoder.eval()
+    
+    with open(in_file, 'r') as in_f, open(out_file, 'w') as out_f:
+        print('id,word', file=out_f)
+        for i, line in enumerate(in_f):
+            example = torchtext.data.example.Example.fromlist([line], [('src', DE)]).src
+            source = DE.process([example], -1, False)
+            source = source.cuda() if use_gpu else source
+
+            outputs, states = encoder(source) #these have a batch_size=1 problem which is kind of annoying.
+
+            max_trg_len = 3 
+            k = 100 
+            best_options = [(Variable(torch.zeros(1)).cuda(), Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda(), states)] 
+            length = 0
+
+            while length < max_trg_len:
+                options = [] #same format as best_options
+                for lprob, sentence, current_state in best_options:
+                    last_word = sentence[-1]
+                    if last_word.data[0] != EN.vocab.stoi["</s>"]:
+                        probs, new_state = decoder(last_word.unsqueeze(1), current_state, outputs)
+                        probs = probs.squeeze()
+                        for index in torch.topk(probs, k)[1]: #only care about top k options in probs for next word.
+                            options.append((torch.add(probs[index], lprob), torch.cat([sentence, index]), new_state))
+                    else:
+                        options.append((lprob, sentence, current_state))
+                options.sort(key = lambda x: x[0].data[0], reverse=True)
+                best_options = options[:k] #sorts by first element, which is lprob.
+                length = length + 1
+                
+            best_options.sort(key = lambda x: x[0].data[0], reverse=True)
+            sentence_strs = []
+            for option in best_options[:100]:
+                sentence = option[1].data[1:]
+                sentence_str = '|'.join([EN.vocab.itos[x] for x in sentence])
+                sentence_strs.append(sentence_str)
+            print(' '.join(sentence_strs), file=out_f)
