@@ -53,7 +53,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
 
             outputs, states = encoder(source) #these have a batch_size=1 problem which is kind of annoying.
             
-            max_trg_len = batch.trg.size(0) #cap it to compute perplexity, will be uncapped at test time 
+            max_trg_len = 50 #cap it to compute perplexity, will be uncapped at test time 
             if beam_width: #beam search
                 k = beam_width #store best k options
                 ## CONVERT BEST_OPTIONS WITH USE_GPU = TRUE OR FALSE.
@@ -69,7 +69,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
                             for index in torch.topk(probs, k)[1]: #only care about top k options in probs for next word.
                                 options.append((torch.add(probs[index], lprob), torch.cat([sentence, index]), new_state))
                         else:
-                            pass # options.append((lprob, sentence, current_state))
+                            options.append((lprob, sentence, current_state))
                     options.sort(key = lambda x: x[0].data[0], reverse=True)
                     best_options = options[:k] #sorts by first element, which is lprob.
                     length = length + 1

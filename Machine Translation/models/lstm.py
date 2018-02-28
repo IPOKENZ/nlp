@@ -84,7 +84,9 @@ class LSTM_Attention_Decoder(nn.Module):
  
         # Create LSTM and linear layers 
         self.lstm = nn.LSTM(embedding_size, hidden_size, num_layers, dropout=dropout)
-        self.linear = nn.Linear(hidden_size, vocab_size)
+        self.linear1 = nn.Linear(hidden_size * 2, hidden_size)
+        self.tanh = nn.Tanh()
+        self.linear2 = nn.Linear(hidden_size, vocab_size)
         self.softmax = nn.LogSoftmax()
         self.dropout = nn.Dropout(dropout)
         
@@ -99,12 +101,15 @@ class LSTM_Attention_Decoder(nn.Module):
                     
         # Now apply attention
         attn_weights = torch.bmm(encoder_outputs.permute(1,0,2), out.permute(1,2,0))
-        attn_weights = F.softmax(attn_weights.permute(0, 2, 1))
-        attn_applied = torch.bmm(attn_weights, encoder_outputs.permute(1,0,2))
+        attn_weights = attn_weights.exp() / attn_weights.exp().sum(dim=1).unsqueeze(1)
+        attn_applied = torch.bmm(attn_weights.permute(0,2,1), encoder_outputs.permute(1,0,2))
         
         # out = torch.cat((out, attn_applied.permute(1,0,2)), 2) <--- Need to double FC layer for this one  
-        out = torch.add(out, attn_applied.permute(1,0,2))
-        out = self.linear(out)
+        # out = torch.add(out, attn_applied.permute(1,0,2))
+        out = torch.cat((out, attn_applied), dim=2) 
+        out = self.linear1(out)
+        out = self.tanh(out)
+        out = self.linear2(out)
         out = self.softmax(out.permute(2,0,1)).permute(1,2,0)
         return out, h
         
