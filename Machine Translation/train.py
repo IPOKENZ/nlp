@@ -31,7 +31,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
         ## DEBUG: To check if your model is outputting sensible things
         argmax = torch.max(translated, dim=1)
         print(argmax[1][:20])
-        print(target[20])
+        print(target[:20])
 
         # Log information
         losses += loss.data[0]
