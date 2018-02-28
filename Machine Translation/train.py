@@ -49,31 +49,33 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
 
         for i, batch in enumerate(val_iter_bs1): 
             
+            # Encode
             source = batch.src.cuda() if use_gpu else batch.src
             target = batch.trg.cuda() if use_gpu else batch.trg
-
-            outputs, states = encoder(source) #these have a batch_size=1 problem which is kind of annoying.
+            outputs_e, states = encoder(source) # batch size = 1
             
-            max_trg_len = 50 #cap it to compute perplexity, will be uncapped at test time 
-            if beam_width: #beam search
-                k = beam_width #store best k options
-                ## CONVERT BEST_OPTIONS WITH USE_GPU = TRUE OR FALSE.
-                best_options = [(Variable(torch.zeros(1)).cuda(), Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda(), states)] 
-                length = 0
-                while length < max_trg_len:
-                    options = [] #same format as best_options
-                    for lprob, sentence, current_state in best_options:
-                        last_word = sentence[-1]
-                        if last_word.data[0] != EN.vocab.stoi["</s>"]:
-                            probs, new_state = decoder(last_word.unsqueeze(1), current_state, outputs)
-                            probs = probs.squeeze()
-                            for index in torch.topk(probs, k)[1]: #only care about top k options in probs for next word.
-                                options.append((torch.add(probs[index], lprob), torch.cat([sentence, index]), new_state))
-                        else:
-                            options.append((lprob, sentence, current_state))
-                    options.sort(key = lambda x: x[0].data[0], reverse=True)
-                    best_options = options[:k] #sorts by first element, which is lprob.
-                    length = length + 1
+            # Start with '<s>'
+            initial_score = Variable(torch.zeros(1)).cuda() if use_gpu else Variable(torch.zeros(1)) 
+            initial_sent = Variable(torch.LongTensor([EN.vocab.stoi["<s>"]])).cuda() if use_gpu else Variable(torch.LongTensor([EN.vocab.stoi["<s>"]]))
+            best_options = [(initial_score, initial_sent, states)] # beam
+            # Beam search
+            k = beam_width # store best k options
+            for length in range(25): # maximum target length
+                options = [] # candidates 
+                for lprob, sentence, current_state in best_options:
+                    last_word = sentence[-1]
+                    if last_word.data[0] != EN.vocab.stoi["</s>"]:
+                        # Decode
+                        lprobs, new_state = decoder(last_word.unsqueeze(1), current_state, outputs_e)
+                        lprobs = lprobs.squeeze()
+                        
+                        # Add top k candidates to options list for next word
+                        for index in torch.topk(lprobs, k)[1]: 
+                            options.append((torch.add(lprobs[index], lprob), torch.cat([sentence, index]), new_state))
+                    else: # keep sentences ending in '</s>' as candidates
+                        options.append((lprob, sentence, current_state))
+                options.sort(key = lambda x: x[0].data[0], reverse=True) # sort by lprob
+                best_options = options[:k] # place top candidates in beam
                 best_options.sort(key = lambda x: x[0].data[0], reverse=True)
                 best_choice = best_options[0] #best overall
                 sentence = best_choice[1].data
