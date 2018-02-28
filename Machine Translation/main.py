@@ -93,5 +93,8 @@ if use_gpu:
 if args.train:
   train_model(train_iter, val_iter, val_iter_bs1, encoder, attn_decoder, optimizer, criterion, DE, EN,
               max_norm=1.0, num_epochs=args.num_epochs, logger=logger, beam_width=args.beam_width)	
+elif args.val:
+  validate_model(val_iter, val_iter_bs1, encoder, attn_decoder, criterion, DE, EN, 
+                   logger=None, beam_width=None, compute_bleu=True)
 else:
   predict("source_test.txt", "predictions.txt", encoder, attn_decoder, DE, EN)
