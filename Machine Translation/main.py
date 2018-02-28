@@ -60,6 +60,7 @@ random.seed(8888)
 
 parser = argparse.ArgumentParser(description='Language Model')
 parser.add_argument('--train', default=1, type=int)
+parser.add_argument('--val', default=1, type=int)
 parser.add_argument('--pretrain', default=1, type=int)
 parser.add_argument('--model_no', default=5, type=int)
 parser.add_argument('--lr', default=0.001, type=float)
