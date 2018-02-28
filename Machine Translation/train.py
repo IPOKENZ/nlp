@@ -67,7 +67,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN, 
                         for index in torch.topk(probs, k)[1]: #only care about top k options in probs for next word.
                             options.append((torch.add(probs[index], lprob), torch.cat([sentence, index]), new_state))
                     else:
-                        options.append((lprob, sentence, current_state))
+                        pass # options.append((lprob, sentence, current_state))
                 options.sort(key = lambda x: x[0].data[0], reverse=True)
                 best_options = options[:k] #sorts by first element, which is lprob.
                 length = length + 1
@@ -195,7 +195,7 @@ def predict(in_file, out_file, encoder, decoder, DE, EN):
                         for index in torch.topk(probs, k)[1]: #only care about top k options in probs for next word.
                             options.append((torch.add(probs[index], lprob), torch.cat([sentence, index]), new_state))
                     else:
-                        options.append((lprob, sentence, current_state))
+                        pass #we don't want it to end too short so we aren't going to allow len<3 submissions.
                 options.sort(key = lambda x: x[0].data[0], reverse=True)
                 best_options = options[:k] #sorts by first element, which is lprob.
                 length = length + 1
@@ -205,5 +205,6 @@ def predict(in_file, out_file, encoder, decoder, DE, EN):
             for option in best_options[:k]:
                 sentence = option[1].data[1:]
                 sentence_str = '|'.join([EN.vocab.itos[x] for x in sentence])
+                sentence_str = [word.replace("\"", "<quote>").replace(",", "<comma>") for word in sentence_str]
                 sentence_strs.append(sentence_str)
             print(' '.join(sentence_strs), file=out_f)

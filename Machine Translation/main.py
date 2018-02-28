@@ -1,4 +1,4 @@
-from train import train_model, validate_model
+from train import train_model, validate_model, predict
 from models.lstm import LSTM_Encoder, LSTM_Decoder, LSTM_Attention_Decoder
 from utils import Logger
 import argparse, random
