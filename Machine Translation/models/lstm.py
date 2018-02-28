@@ -101,8 +101,8 @@ class LSTM_Attention_Decoder(nn.Module):
                     
         # Now apply attention
         attn_weights = torch.bmm(encoder_outputs.permute(1,0,2), out.permute(1,2,0))
-        attn_weights = attn_weights.exp() / attn_weights.exp().sum(dim=1).unsqueeze(1)
-        attn_applied = torch.bmm(attn_weights.permute(0,2,1), encoder_outputs.permute(1,0,2))
+        attn_weights = F.softmax(attn_weights.permute(0,2,1))
+        attn_applied = torch.bmm(attn_weights, encoder_outputs.permute(1,0,2))
         
         # out = torch.cat((out, attn_applied.permute(1,0,2)), 2) <--- Need to double FC layer for this one  
         # out = torch.add(out, attn_applied.permute(1,0,2))
