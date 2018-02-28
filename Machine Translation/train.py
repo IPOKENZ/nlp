@@ -208,4 +208,7 @@ def predict(in_file, out_file, encoder, decoder, DE, EN):
                 sentence = [word.replace("\"", "<quote>").replace(",", "<comma>") for word in sentence]
                 sentence_str = '|'.join(sentence)
                 sentence_strs.append(sentence_str)
-            print(' '.join(sentence_strs), file=out_f)
+            print(str(i+1) + ',' + ' '.join(sentence_strs), file=out_f)
+
+            if i % 50 == 0:
+                print("Finished first {i} predictions.".format(i))
