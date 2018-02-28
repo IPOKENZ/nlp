@@ -23,14 +23,10 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
         outputs, states = encoder(source)
         translated, states = decoder(target, states, outputs)
         
-        batch_size = source.size(1)
         vocab_size = translated.size(2)
-        start_tokens = Variable(torch.zeros(batch_size, vocab_size))
-        start_tokens = start_tokens.scatter_(1, torch.ones(batch_size).unsqueeze(1).long() * EN.vocab.stoi["<s>"], 1)
-        start_tokens = start_tokens.unsqueeze(0).cuda()
-        translated = torch.cat((start_tokens, translated[:-1]), 0)
-        
-        loss = criterion(translated.view(-1, vocab_size), target.view(-1))
+        translated = translated.contiguous()[:-1].view(-1, vocab_size)
+        target = target[1:].view(-1).contiguous()
+        loss = criterion(translated, target)
 
         # Log information
         losses += loss.data[0]
@@ -125,7 +121,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
         logger.log(info) if logger is not None else print(info)
 
 def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer, criterion, DE, EN,
-                max_norm=5.0, num_epochs=10, logger=None, beam_width=None, bidirectional=True):  
+                max_norm=1.0, num_epochs=10, logger=None, beam_width=None, bidirectional=True):  
     encoder.train()
     decoder.train()
     for epoch in range(num_epochs):
@@ -145,14 +141,11 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
             outputs, states = encoder(source)
             translated, states = decoder(target, states, outputs)
             
-            batch_size = source.size(1)
             vocab_size = translated.size(2)
-            start_tokens = Variable(torch.zeros(batch_size, vocab_size))
-            start_tokens = start_tokens.scatter_(1, torch.ones(batch_size).unsqueeze(1).long() * EN.vocab.stoi["<s>"], 1)
-            start_tokens = start_tokens.unsqueeze(0).cuda()
-            translated = torch.cat((start_tokens, translated[:-1]), 0)
-            
-            loss = criterion(translated.view(-1, vocab_size), target.view(-1)) 
+            translated = translated.contiguous()[:-1].view(-1, vocab_size)
+            target = target[1:].view(-1).contiguous()
+            loss = criterion(translated, target)
+
             loss.backward()
             torch.nn.utils.clip_grad_norm(encoder.parameters(), max_norm)
             torch.nn.utils.clip_grad_norm(decoder.parameters(), max_norm)
