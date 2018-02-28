@@ -204,7 +204,8 @@ def predict(in_file, out_file, encoder, decoder, DE, EN):
             sentence_strs = []
             for option in best_options[:k]:
                 sentence = option[1].data[1:]
-                sentence_str = '|'.join([EN.vocab.itos[x] for x in sentence])
-                sentence_str = [word.replace("\"", "<quote>").replace(",", "<comma>") for word in sentence_str]
+                sentence = [EN.vocab.itos[x] for x in sentence]
+                sentence = [word.replace("\"", "<quote>").replace(",", "<comma>") for word in sentence]
+                sentence_str = '|'.join(sentence)
                 sentence_strs.append(sentence_str)
             print(' '.join(sentence_strs), file=out_f)
