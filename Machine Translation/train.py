@@ -91,7 +91,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
 
                 while word.data[0] != EN.vocab.stoi["</s>"] and len(sentence) < max_trg_len: ### TO FIX: YOU DONT WANT A CAP HERE
                     sentence.append(word.data[0])
-                    translated, states = decoder(word.unsqueeze(1), states, outputs)
+                    translated, states = decoder(word.unsqueeze(1), states, outputs_e)
                     probs.append(translated)
                     word = torch.max(translated, 2)[1][0]
 
@@ -116,7 +116,7 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
 
                 while word.data[0] != EN.vocab.stoi["</s>"] and len(sentence) < max_trg_len: ### TO FIX: YOU DONT WANT A CAP HERE
                     sentence.append(word.data[0])
-                    translated, states = decoder(word.unsqueeze(1), states, outputs)
+                    translated, states = decoder(word.unsqueeze(1), states, outputs_e)
                     probs.append(translated)
                     word = torch.max(translated, 2)[1][0]
 
