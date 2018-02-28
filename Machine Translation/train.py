@@ -28,10 +28,10 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
         target = target[1:].view(-1).contiguous()
         loss = criterion(translated, target)
 
-        ## DEBUG: To check if your model is outputting sensible things
-        argmax = torch.max(translated, dim=1)
-        print(argmax[1][:20])
-        print(target[:20])
+        # ## DEBUG: To check if your model is outputting sensible things
+        # argmax = torch.max(translated, dim=1)
+        # print(argmax[1][:20])
+        # print(target[:20])
 
         # Log information
         losses += loss.data[0]
@@ -60,7 +60,8 @@ def validate_model(val_iter, val_iter_bs1, encoder, decoder, criterion, DE, EN,
             best_options = [(initial_score, initial_sent, states)] # beam
             # Beam search
             k = beam_width # store best k options
-            for length in range(25): # maximum target length
+            max_trg_len = 25
+            for length in range(max_trg_len): # maximum target length
                 options = [] # candidates 
                 for lprob, sentence, current_state in best_options:
                     last_word = sentence[-1]
