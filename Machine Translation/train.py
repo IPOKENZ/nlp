@@ -159,7 +159,7 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
             # Log information
             losses += loss.data[0]
             log_freq = 1000
-            if i % log_freq == 10:
+            if i % log_freq == 750:
                 losses_for_log = losses / (i)
                 info = 'Epoch [{epochs}/{num_epochs}], Batch [{batch}/{num_batches}], Loss: {loss:.3f}, Sorta-Perplexity: {perplexity:.3f}'.format(
                     epochs=epoch+1, num_epochs=num_epochs, batch=i, num_batches=len(train_iter), loss=losses_for_log, perplexity=torch.exp(torch.FloatTensor([losses_for_log]))[0])
