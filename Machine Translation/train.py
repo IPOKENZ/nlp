@@ -167,7 +167,7 @@ def train_model(train_iter, val_iter, val_iter_bs1, encoder, decoder, optimizer,
                 torch.save(encoder.state_dict(), 'saves/encoder{}.pkl'.format(epoch))
                 torch.save(decoder.state_dict(), 'saves/decoder{}.pkl'.format(epoch))
 
-def predict(in_file, out_file, encoder, decoder, criterion, DE, EN):
+def predict(in_file, out_file, encoder, decoder, DE, EN):
     encoder.eval()
     decoder.eval()
     
@@ -202,7 +202,7 @@ def predict(in_file, out_file, encoder, decoder, criterion, DE, EN):
                 
             best_options.sort(key = lambda x: x[0].data[0], reverse=True)
             sentence_strs = []
-            for option in best_options[:100]:
+            for option in best_options[:k]:
                 sentence = option[1].data[1:]
                 sentence_str = '|'.join([EN.vocab.itos[x] for x in sentence])
                 sentence_strs.append(sentence_str)

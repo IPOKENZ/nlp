@@ -59,6 +59,7 @@ EN.vocab.load_vectors(vectors=Vectors('wiki.simple.vec', url=url))
 random.seed(8888)
 
 parser = argparse.ArgumentParser(description='Language Model')
+parser.add_argument('--train', default=1, type=int)
 parser.add_argument('--pretrain', default=1, type=int)
 parser.add_argument('--model_no', default=5, type=int)
 parser.add_argument('--lr', default=0.001, type=float)
@@ -89,6 +90,8 @@ logger = Logger()
 if use_gpu: 
 	print("CUDA is available, hooray!")
 
-train_model(train_iter, val_iter, val_iter_bs1, encoder, attn_decoder, optimizer, criterion, DE, EN,
-            max_norm=1.0, num_epochs=args.num_epochs, logger=logger, beam_width=args.beam_width)	
-
+if args.train:
+  train_model(train_iter, val_iter, val_iter_bs1, encoder, attn_decoder, optimizer, criterion, DE, EN,
+              max_norm=1.0, num_epochs=args.num_epochs, logger=logger, beam_width=args.beam_width)	
+else:
+  predict("source_test.txt", "predictions.txt", encoder, attn_decoder, DE, EN)
